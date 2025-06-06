@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   AppBar,
@@ -55,6 +55,19 @@ const sidebarItems = [
 ];
 
 export default function App() {
+  const [installType, setInstallType] = useState("Non-Admin");
+
+  const nonAdminDownloadLink =
+    "https://download-uat.flexnetoperations.com/439215/1280/578/8589578/AlteryxNonAdminInstallx64_2023.2.1.276.exe?ftpRequestID=2094457098&server=download-uat.flexnetoperations.com&dtm=DTM20250605140956MjU5NzAzNDg5&authparam=1749157796_77d3316b3ca252acb058fd35f3e8ef31&ext=.exe";
+
+  const nonAdminPredictiveToolsDownloadLink =
+    "https://download-uat.flexnetoperations.com/439215/1280/618/8589618/AlteryxNonAdminPatchInstall_2023.2.1.8.276.exe?ftpRequestID=2094457158&server=download-uat.flexnetoperations.com&dtm=DTM20250605140956MzMzODI3NjE2&authparam=1749157796_5817983890da9801bb239791fc40182b&ext=.exe";
+  const adminDownloadLink =
+    "https://download-uat.flexnetoperations.com/439215/1280/568/8589568/AlteryxInstallx64_2023.2.1.276.exe?ftpRequestID=2094457148&server=download-uat.flexnetoperations.com&dtm=DTM20250605140956Mzk3NjA5NDk5&authparam=1749157796_724eab8e3f4c5c655df35c12e875a537&ext=.exe";
+
+  const adminPredictiveToolsDownloadLink =
+    "https://download-uat.flexnetoperations.com/439215/1280/608/8589608/RInstaller_2023.2.1.276.exe?ftpRequestID=2094457128&server=download-uat.flexnetoperations.com&dtm=DTM20250605140956NzQ4NTUxNTM1&authparam=1749157796_2f68c858a06303e79bd5b65aabffda6d&ext=.exe";
+
   return (
     <Box sx={{ bgcolor: "#f7fafd", minHeight: "100vh" }}>
       {/* Top Navigation Bar */}
@@ -199,7 +212,12 @@ export default function App() {
               <Typography variant="subtitle2" sx={{ fontWeight: 500, mb: 1 }}>
                 Installation Type
               </Typography>
-              <RadioGroup row defaultValue="Non-Admin" sx={{ mb: 1 }}>
+              <RadioGroup
+                row
+                value={installType}
+                onChange={e => setInstallType(e.target.value)}
+                sx={{ mb: 1 }}
+              >
                 <FormControlLabel value="Non-Admin" control={<Radio />} label="Non-Admin" />
                 <FormControlLabel value="Admin" control={<Radio />} label="Admin" />
               </RadioGroup>
@@ -216,7 +234,7 @@ export default function App() {
                 <DescriptionOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Alteryx Designer (Non-Admin version) - 2025.1
+                    {`Alteryx Designer (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -232,6 +250,15 @@ export default function App() {
                   variant="contained"
                   startIcon={<DownloadIcon />}
                   sx={{ minWidth: 120, fontWeight: 600 }}
+                  component="a"
+                  href={
+                    installType === "Non-Admin"
+                      ? nonAdminPredictiveToolsDownloadLink
+                      : adminPredictiveToolsDownloadLink
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  disabled={false}
                 >
                   Download
                 </Button>
@@ -251,7 +278,7 @@ export default function App() {
                 <DescriptionOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Alteryx Predictive Tools (Non-Admin version) - 2025.1
+                    {`Alteryx Predictive Tools (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -267,6 +294,11 @@ export default function App() {
                   variant="contained"
                   startIcon={<DownloadIcon />}
                   sx={{ minWidth: 120, fontWeight: 600 }}
+                  component="a"
+                  href={installType === "Non-Admin" ? nonAdminDownloadLink : adminDownloadLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  disabled={installType !== "Non-Admin"}
                 >
                   Download
                 </Button>
@@ -286,7 +318,7 @@ export default function App() {
                 <InfoOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Alteryx Intelligence Suite (Non-Admin version) - 2025.1
+                    {`Alteryx Intelligence Suite (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -302,6 +334,11 @@ export default function App() {
                   variant="contained"
                   startIcon={<DownloadIcon />}
                   sx={{ minWidth: 120, fontWeight: 600 }}
+                  component="a"
+                  href={installType === "Non-Admin" ? nonAdminDownloadLink : adminDownloadLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  disabled={installType !== "Non-Admin"}
                 >
                   Download
                 </Button>
@@ -321,7 +358,7 @@ export default function App() {
                 <StorageOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    GenAI Tools (Non-Admin version) - 2025.1
+                    {`GenAI Tools (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -337,6 +374,11 @@ export default function App() {
                   variant="contained"
                   startIcon={<DownloadIcon />}
                   sx={{ minWidth: 120, fontWeight: 600 }}
+                  component="a"
+                  href={installType === "Non-Admin" ? nonAdminDownloadLink : adminDownloadLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  disabled={installType !== "Non-Admin"}
                 >
                   Download
                 </Button>
@@ -356,7 +398,7 @@ export default function App() {
                 <SettingsOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Copilot (Non-Admin version) - 2025.1
+                    {`Copilot (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -372,6 +414,11 @@ export default function App() {
                   variant="contained"
                   startIcon={<DownloadIcon />}
                   sx={{ minWidth: 120, fontWeight: 600 }}
+                  component="a"
+                  href={installType === "Non-Admin" ? nonAdminDownloadLink : adminDownloadLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  disabled={installType !== "Non-Admin"}
                 >
                   Download
                 </Button>
