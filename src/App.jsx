@@ -232,7 +232,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   843 MB
                 </Typography>
-                <DownloadProgress />
+                <DownloadProgress installType={installType} />
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>

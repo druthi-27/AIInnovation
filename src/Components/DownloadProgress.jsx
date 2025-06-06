@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Box, Button, LinearProgress, Typography, IconButton } from '@mui/material';
+import { Box, Button, LinearProgress, Typography } from '@mui/material';
 import { Download, Close } from '@mui/icons-material';
 import { adminDownloadLink, nonAdminDownloadLink } from '../Constants/Const';
 
@@ -11,29 +11,32 @@ const formatBytes = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const DownloadProgress = (installType) => {
+const DownloadProgress = ({ installType }) => {
   const [downloading, setDownloading] = useState(false);
-  const [progress, setProgress] = useState(0); 
-  const [speed, setSpeed] = useState(0); 
-  const [eta, setEta] = useState(0); 
+  const [progress, setProgress] = useState(0);
+  const [speed, setSpeed] = useState(0);
+  const [eta, setEta] = useState(0);
   const intervalRef = useRef(null);
 
-  const handleDownload = () => {
+  const handleDownload = (e) => {
+    if (downloading) {
+      e.preventDefault();
+      return;
+    }
     setDownloading(true);
     setProgress(0);
     setSpeed(0);
     setEta(0);
     let downloaded = 0;
-    const total = 50 * 1024 * 1024; 
+    const total = 50 * 1024 * 1024;
     const startTime = Date.now();
 
     intervalRef.current = setInterval(() => {
-      // Simulate variable speed
-      const chunk = Math.floor(Math.random() * 500000) + 500000; 
+      const chunk = Math.floor(Math.random() * 500000) + 500000;
       downloaded += chunk;
       if (downloaded > total) downloaded = total;
 
-      const elapsed = (Date.now() - startTime) / 1000; 
+      const elapsed = (Date.now() - startTime) / 1000;
       const currentSpeed = downloaded / elapsed;
       const percent = Math.round((downloaded / total) * 100);
       const remaining = total - downloaded;
@@ -60,23 +63,44 @@ const DownloadProgress = (installType) => {
     setEta(0);
   };
 
+  const downloadLink =
+    installType === "Non-Admin"
+      ? nonAdminDownloadLink
+      : installType === "Admin"
+      ? adminDownloadLink
+      : null;
+
   return (
-    <Box sx={{ width: 400, p: 3, border: '1px solid #eee', borderRadius: 2, boxShadow: 1, position: 'relative' }}>
-      <Button
-        variant="contained"
-        startIcon={<Download />}
-        sx={{ fontWeight: 600 }}
-        fullWidth
-        onClick={handleDownload}
-        disabled={downloading}
-        component="a"
-        // href={installType === "Non-Admin" ? nonAdminDownloadLink : adminDownloadLink}
-        target="_blank"
-        // rel="noopener noreferrer"
-        // disabled={installType !== "Non-Admin"}
-      >
-        {downloading ? 'Downloading...' : 'Download'}
-      </Button>
+    <Box>
+      {/* Center the button horizontally */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
+        <Button
+          variant="contained"
+          startIcon={<Download />}
+          sx={{
+            fontWeight: 600,
+            fontSize: '0.95rem',
+            py: 1,
+            px: 2,
+            minWidth: 140,
+            border: 'none',
+            boxShadow: 'none',
+            textTransform: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            display: 'flex',
+          }}
+          size="medium"
+          onClick={handleDownload}
+          disabled={downloading || !downloadLink}
+          component={downloadLink ? "a" : "button"}
+          href={downloadLink && !downloading ? downloadLink : undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {downloading ? 'Downloading...' : 'Download'}
+        </Button>
+      </Box>
       {downloading && (
         <Box sx={{ mt: 3 }}>
           <LinearProgress variant="determinate" value={progress} />
