@@ -26,13 +26,13 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import DownloadIcon from "@mui/icons-material/Download";
 import DescriptionOutlinedIcon from "@mui/icons-material/DescriptionOutlined";
 import DesktopWindowsOutlinedIcon from "@mui/icons-material/DesktopWindowsOutlined";
 import StorageOutlinedIcon from "@mui/icons-material/StorageOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import DownloadProgress from "./Components/DownloadProgress";
 
 const drawerWidth = 240;
 
@@ -228,13 +228,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   843 MB
                 </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadIcon />}
-                  sx={{ minWidth: 120, fontWeight: 600 }}
-                >
-                  Download
-                </Button>
+                <DownloadProgress />
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
@@ -263,13 +257,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   250 MB
                 </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadIcon />}
-                  sx={{ minWidth: 120, fontWeight: 600 }}
-                >
-                  Download
-                </Button>
+                <DownloadProgress />
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
@@ -298,13 +286,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   500 MB
                 </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadIcon />}
-                  sx={{ minWidth: 120, fontWeight: 600 }}
-                >
-                  Download
-                </Button>
+                <DownloadProgress />
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
@@ -333,13 +315,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   120 MB
                 </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadIcon />}
-                  sx={{ minWidth: 120, fontWeight: 600 }}
-                >
-                  Download
-                </Button>
+                <DownloadProgress />
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
@@ -368,13 +344,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   80 MB
                 </Typography>
-                <Button
-                  variant="contained"
-                  startIcon={<DownloadIcon />}
-                  sx={{ minWidth: 120, fontWeight: 600 }}
-                >
-                  Download
-                </Button>
+                <DownloadProgress />
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
