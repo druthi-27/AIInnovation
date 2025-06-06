@@ -247,9 +247,33 @@ export default function App() {
               <Typography sx={{ fontWeight: 700 }}>Alteryx Predictive Tools</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography variant="body2" color="text.secondary">
-                Download predictive tools for advanced analytics. (Content placeholder)
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <DescriptionOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    Alteryx Predictive Tools (Non-Admin version) - 2025.1
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Last Updated: April 22, 2025{" "}
+                    <Link href="#" underline="hover" sx={{ ml: 1 }}>
+                      Release Notes
+                    </Link>
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
+                  250 MB
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<DownloadIcon />}
+                  sx={{ minWidth: 120, fontWeight: 600 }}
+                >
+                  Download
+                </Button>
+                <IconButton>
+                  <ShieldOutlinedIcon />
+                </IconButton>
+              </Box>
             </AccordionDetails>
           </Accordion>
 
@@ -258,9 +282,33 @@ export default function App() {
               <Typography sx={{ fontWeight: 700 }}>Alteryx Intelligence Suite</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography variant="body2" color="text.secondary">
-                Download intelligence suite tools. (Content placeholder)
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <InfoOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    Alteryx Intelligence Suite (Non-Admin version) - 2025.1
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Last Updated: April 22, 2025{" "}
+                    <Link href="#" underline="hover" sx={{ ml: 1 }}>
+                      Release Notes
+                    </Link>
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
+                  500 MB
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<DownloadIcon />}
+                  sx={{ minWidth: 120, fontWeight: 600 }}
+                >
+                  Download
+                </Button>
+                <IconButton>
+                  <ShieldOutlinedIcon />
+                </IconButton>
+              </Box>
             </AccordionDetails>
           </Accordion>
 
@@ -269,9 +317,33 @@ export default function App() {
               <Typography sx={{ fontWeight: 700 }}>GenAI Tools</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography variant="body2" color="text.secondary">
-                Download GenAI tools. (Content placeholder)
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <StorageOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    GenAI Tools (Non-Admin version) - 2025.1
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Last Updated: April 22, 2025{" "}
+                    <Link href="#" underline="hover" sx={{ ml: 1 }}>
+                      Release Notes
+                    </Link>
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
+                  120 MB
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<DownloadIcon />}
+                  sx={{ minWidth: 120, fontWeight: 600 }}
+                >
+                  Download
+                </Button>
+                <IconButton>
+                  <ShieldOutlinedIcon />
+                </IconButton>
+              </Box>
             </AccordionDetails>
           </Accordion>
 
@@ -280,9 +352,33 @@ export default function App() {
               <Typography sx={{ fontWeight: 700 }}>Copilot</Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <Typography variant="body2" color="text.secondary">
-                Download Copilot tools. (Content placeholder)
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <SettingsOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
+                <Box sx={{ flex: 1 }}>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    Copilot (Non-Admin version) - 2025.1
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    Last Updated: April 22, 2025{" "}
+                    <Link href="#" underline="hover" sx={{ ml: 1 }}>
+                      Release Notes
+                    </Link>
+                  </Typography>
+                </Box>
+                <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
+                  80 MB
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<DownloadIcon />}
+                  sx={{ minWidth: 120, fontWeight: 600 }}
+                >
+                  Download
+                </Button>
+                <IconButton>
+                  <ShieldOutlinedIcon />
+                </IconButton>
+              </Box>
             </AccordionDetails>
           </Accordion>
 
