@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Box, Button, LinearProgress, Typography, IconButton } from '@mui/material';
 import { Download, Close } from '@mui/icons-material';
+import { adminDownloadLink, nonAdminDownloadLink } from '../Constants/Const';
 
 const formatBytes = (bytes) => {
   if (bytes === 0) return '0 B';
@@ -10,7 +11,7 @@ const formatBytes = (bytes) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const DownloadProgress = () => {
+const DownloadProgress = (installType) => {
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0); 
   const [speed, setSpeed] = useState(0); 
@@ -63,11 +64,16 @@ const DownloadProgress = () => {
     <Box sx={{ width: 400, p: 3, border: '1px solid #eee', borderRadius: 2, boxShadow: 1, position: 'relative' }}>
       <Button
         variant="contained"
-        color="primary"
+        startIcon={<Download />}
+        sx={{ fontWeight: 600 }}
+        fullWidth
         onClick={handleDownload}
         disabled={downloading}
-        fullWidth
-        startIcon={<Download />}
+        component="a"
+        // href={installType === "Non-Admin" ? nonAdminDownloadLink : adminDownloadLink}
+        target="_blank"
+        // rel="noopener noreferrer"
+        // disabled={installType !== "Non-Admin"}
       >
         {downloading ? 'Downloading...' : 'Download'}
       </Button>

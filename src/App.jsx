@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   AppBar,
@@ -17,12 +17,9 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  Button,
   IconButton,
-  Divider,
   Link,
-  Paper,
-  Stack,
+  Paper
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -55,6 +52,8 @@ const sidebarItems = [
 ];
 
 export default function App() {
+  const [installType, setInstallType] = useState("Non-Admin");
+
   return (
     <Box sx={{ bgcolor: "#f7fafd", minHeight: "100vh" }}>
       {/* Top Navigation Bar */}
@@ -199,7 +198,12 @@ export default function App() {
               <Typography variant="subtitle2" sx={{ fontWeight: 500, mb: 1 }}>
                 Installation Type
               </Typography>
-              <RadioGroup row defaultValue="Non-Admin" sx={{ mb: 1 }}>
+              <RadioGroup
+                row
+                value={installType}
+                onChange={e => setInstallType(e.target.value)}
+                sx={{ mb: 1 }}
+              >
                 <FormControlLabel value="Non-Admin" control={<Radio />} label="Non-Admin" />
                 <FormControlLabel value="Admin" control={<Radio />} label="Admin" />
               </RadioGroup>
@@ -216,7 +220,7 @@ export default function App() {
                 <DescriptionOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Alteryx Designer (Non-Admin version) - 2025.1
+                    {`Alteryx Designer (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -245,7 +249,7 @@ export default function App() {
                 <DescriptionOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Alteryx Predictive Tools (Non-Admin version) - 2025.1
+                    {`Alteryx Predictive Tools (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -257,7 +261,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   250 MB
                 </Typography>
-                <DownloadProgress />
+                <DownloadProgress  installType={installType}/>
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
@@ -274,7 +278,7 @@ export default function App() {
                 <InfoOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Alteryx Intelligence Suite (Non-Admin version) - 2025.1
+                    {`Alteryx Intelligence Suite (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -286,7 +290,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   500 MB
                 </Typography>
-                <DownloadProgress />
+                <DownloadProgress installType={installType}/>
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
@@ -303,7 +307,7 @@ export default function App() {
                 <StorageOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    GenAI Tools (Non-Admin version) - 2025.1
+                    {`GenAI Tools (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -315,7 +319,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   120 MB
                 </Typography>
-                <DownloadProgress />
+                <DownloadProgress installType={installType} />
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
@@ -332,7 +336,7 @@ export default function App() {
                 <SettingsOutlinedIcon sx={{ fontSize: 32, color: "#1976d2" }} />
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                    Copilot (Non-Admin version) - 2025.1
+                    {`Copilot (${installType} version) - 2025.1`}
                   </Typography>
                   <Typography variant="caption" sx={{ color: "text.secondary" }}>
                     Last Updated: April 22, 2025{" "}
@@ -344,7 +348,7 @@ export default function App() {
                 <Typography variant="body2" sx={{ color: "text.secondary", mr: 2 }}>
                   80 MB
                 </Typography>
-                <DownloadProgress />
+                <DownloadProgress  installType={installType}/>
                 <IconButton>
                   <ShieldOutlinedIcon />
                 </IconButton>
