@@ -30,6 +30,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import DownloadProgress from "./Components/DownloadProgress";
+import ShieldoutlinedIconDialogue from "./Components/ShieldoutlinedIconDialogue";
 
 const drawerWidth = 240;
 
@@ -233,9 +234,12 @@ export default function App() {
                   843 MB
                 </Typography>
                 <DownloadProgress installType={installType} />
-                <IconButton>
-                  <ShieldOutlinedIcon />
-                </IconButton>
+                <ShieldoutlinedIconDialogue
+                fileName="Alteryx Designer 2025.1.exe"
+                hash="a1b2c3d4e5f6... (SHA256)"
+                publisher="Alteryx, Inc."
+                lastScan="April 22, 2025"
+                />
               </Box>
             </AccordionDetails>
           </Accordion>
@@ -262,9 +266,12 @@ export default function App() {
                   250 MB
                 </Typography>
                 <DownloadProgress  installType={installType}/>
-                <IconButton>
-                  <ShieldOutlinedIcon />
-                </IconButton>
+                <ShieldoutlinedIconDialogue
+                fileName="Alteryx Designer 2025.1.exe"
+                hash="a1b2c3d4e5f6... (SHA256)"
+                publisher="Alteryx, Inc."
+                lastScan="April 22, 2025"
+                />
               </Box>
             </AccordionDetails>
           </Accordion>
@@ -291,9 +298,12 @@ export default function App() {
                   500 MB
                 </Typography>
                 <DownloadProgress installType={installType}/>
-                <IconButton>
-                  <ShieldOutlinedIcon />
-                </IconButton>
+                <ShieldoutlinedIconDialogue
+                fileName="Alteryx Designer 2025.1.exe"
+                hash="a1b2c3d4e5f6... (SHA256)"
+                publisher="Alteryx, Inc."
+                lastScan="April 22, 2025"
+                />
               </Box>
             </AccordionDetails>
           </Accordion>
@@ -320,9 +330,12 @@ export default function App() {
                   120 MB
                 </Typography>
                 <DownloadProgress installType={installType} />
-                <IconButton>
-                  <ShieldOutlinedIcon />
-                </IconButton>
+                <ShieldoutlinedIconDialogue
+                fileName="Alteryx Designer 2025.1.exe"
+                hash="a1b2c3d4e5f6... (SHA256)"
+                publisher="Alteryx, Inc."
+                lastScan="April 22, 2025"
+                />
               </Box>
             </AccordionDetails>
           </Accordion>
@@ -349,9 +362,12 @@ export default function App() {
                   80 MB
                 </Typography>
                 <DownloadProgress  installType={installType}/>
-                <IconButton>
-                  <ShieldOutlinedIcon />
-                </IconButton>
+                <ShieldoutlinedIconDialogue
+                fileName="Alteryx Designer 2025.1.exe"
+                hash="a1b2c3d4e5f6... (SHA256)"
+                publisher="Alteryx, Inc."
+                lastScan="April 22, 2025"
+                />
               </Box>
             </AccordionDetails>
           </Accordion>
