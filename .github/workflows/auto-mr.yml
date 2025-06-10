@@ -43,7 +43,6 @@ jobs:
           pr_label: "auto-pr"
 
   update-jira-status:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Extract Jira Ticket ID from Branch Name
@@ -57,32 +56,8 @@ jobs:
           fi
           echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
 
-      - name: Check for open PRs with same Jira ID
-        id: check_open_prs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
-          REPO: ${{ github.repository }}
-        run: |
-          if [ -z "$JIRA_ID" ]; then
-            echo "No Jira ID found, skipping check."
-            echo "open_pr_exists=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          # Search for open PRs with the Jira ID in the title
-          prs=$(gh pr list --repo "$REPO" --state open --search "$JIRA_ID" --json number,title,headRefName)
-          count=$(echo "$prs" | jq ". | length")
-          if [ "$count" -gt 0 ]; then
-            echo "Found $count open PR(s) with Jira ID $JIRA_ID"
-            echo "open_pr_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "No open PRs with Jira ID $JIRA_ID"
-            echo "open_pr_exists=false" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
-
       - name: Update Jira Status
-        if: steps.check_open_prs.outputs.open_pr_exists == 'false' && steps.extract_jira.outputs.jira_id != ''
+        if: steps.extract_jira.outputs.jira_id != ''
         env:
           JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
@@ -91,11 +66,12 @@ jobs:
           PR_ACTION: ${{ github.event.action }}
           PR_MERGED: ${{ github.event.pull_request.merged }}
         run: |
-          if [ "$PR_ACTION" = "closed" ] && [ "$PR_MERGED" = "true" ]; then
-            TRANSITION_NAME="Testing"
-          elif [ "$PR_ACTION" = "opened" ]; then
+          if [ "$PR_ACTION" = "opened" ]; then
             TRANSITION_NAME="In Review"
+          elif [ "$PR_ACTION" = "closed" ] && [ "$PR_MERGED" = "true" ]; then
+            TRANSITION_NAME="Testing"
           else
+            echo "No Jira transition needed for this event."
             exit 0
           fi
 
@@ -103,6 +79,7 @@ jobs:
           TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
             -H "Accept: application/json" \
             "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions")
+          echo "Available transitions: $TRANSITIONS"
           TRANSITION_ID=$(echo "$TRANSITIONS" | jq -r --arg NAME "$TRANSITION_NAME" '.transitions[] | select(.name==$NAME) | .id')
 
           if [ -z "$TRANSITION_ID" ]; then
