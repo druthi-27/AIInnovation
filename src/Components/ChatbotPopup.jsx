@@ -7,17 +7,34 @@ const BOT_AVATAR = annaGuideAvatar;
 
 const initialBotMessage = {
   sender: "bot",
-  text: "Hello! How can I help you today?",
+  text: "Hello!",
   timestamp: new Date(),
 };
 
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+// Helper function to simulate word-by-word streaming
+function simulateStreamingResponse(fullText, onUpdate, onDone, delay = 120) {
+  const words = fullText.split(" ");
+  let i = 0;
+  function stream() {
+    if (i <= words.length) {
+      onUpdate(words.slice(0, i).join(" "));
+      i++;
+      setTimeout(stream, delay);
+    } else {
+      onDone();
+    }
+  }
+  stream();
+}
 
 const ChatbotPopup = () => {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [conversation, setConversation] = useState([initialBotMessage]);
   const [listening, setListening] = useState(false);
+  const [botStreaming, setBotStreaming] = useState(false);
   const chatEndRef = useRef(null);
   const recognitionRef = useRef(null);
 
@@ -28,7 +45,7 @@ const ChatbotPopup = () => {
     }
   }, [conversation, open]);
 
-  // Send message handler
+  // Send message handler with streaming bot response
   const handleSend = () => {
     if (message.trim()) {
       const userMsg = {
@@ -39,19 +56,61 @@ const ChatbotPopup = () => {
       setConversation((prev) => [...prev, userMsg]);
       setMessage("");
 
-      // Simulate bot response after a short delay
-      setTimeout(() => {
-        setConversation((prev) => [
-          ...prev,
-          {
-            sender: "bot",
-            text: "I'm here to assist you! (This is a demo response.)",
-            timestamp: new Date(),
-          },
-        ]);
-      }, 800);
+      // Simulate streaming bot response
+      const botResponse = getDemoBotResponse(message);
+      const botMsg = {
+        sender: "bot",
+        text: "",
+        timestamp: new Date(),
+        streaming: true,
+      };
+      setConversation((prev) => [...prev, botMsg]);
+      setBotStreaming(true);
+
+      simulateStreamingResponse(
+        botResponse,
+        (partialText) => {
+          setConversation((prev) => {
+            // Update the last bot message with the new partial text
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              text: partialText,
+              streaming: true,
+            };
+            return updated;
+          });
+        },
+        () => {
+          setConversation((prev) => {
+            // Remove streaming flag when done
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
+              streaming: false,
+            };
+            return updated;
+          });
+          setBotStreaming(false);
+        }
+      );
     }
   };
+
+  // Demo bot response generator (customize as needed)
+  function getDemoBotResponse(userMsg) {
+    // You can add more sophisticated demo logic here
+    if (/hello|hi|hey/i.test(userMsg)) {
+      return "Hello! 👋 How can I assist you today?";
+    }
+    if (/help|support/i.test(userMsg)) {
+      return "Sure, I'm here to help! Please tell me what you need assistance with.";
+    }
+    if (/time/i.test(userMsg)) {
+      return `The current time is ${new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}.`;
+    }
+    return "I'm here to assist you! (This is a demo response with word-by-word streaming.)";
+  }
 
   // Mic handler with speech-to-text using ref
   const handleMic = () => {
@@ -225,6 +284,13 @@ const ChatbotPopup = () => {
                   )}
                   <div className="chatbot-message-bubble">
                     {msg.text}
+                    {msg.streaming && (
+                      <span className="chatbot-streaming-indicator" style={{ marginLeft: 6 }}>
+                        <span className="dot">.</span>
+                        <span className="dot">.</span>
+                        <span className="dot">.</span>
+                      </span>
+                    )}
                     <span className="chatbot-message-time">
                       {msg.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
@@ -280,13 +346,14 @@ const ChatbotPopup = () => {
                   background: "transparent",
                 }}
                 autoFocus
+                disabled={botStreaming}
               />
               <button
                 className="chatbot-send-btn"
                 onClick={handleSend}
                 aria-label="Send message"
                 type="button"
-                disabled={!message.trim()}
+                disabled={!message.trim() || botStreaming}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path d="M2 21l21-9-21-9v7l15 2-15 2z" fill="#1976d2" />
