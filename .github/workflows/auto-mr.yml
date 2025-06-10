@@ -73,22 +73,22 @@ jobs:
           # Get the email of the latest commit author
           AUTHOR_EMAIL=$(git log -1 --pretty=format:"%ae")
           echo "Latest commit author email: $AUTHOR_EMAIL"
-          # Try to find a GitHub user with this email
           USERNAME=""
           if [ -n "$AUTHOR_EMAIL" ]; then
-            # The search API for users by email is not public, but we can try to match via commits API
-            # Try to get the username from the commit itself (if pushed by a GitHub user)
             REPO="${GITHUB_REPOSITORY}"
             SHA=$(git rev-parse HEAD)
             USERNAME=$(curl -s -H "Authorization: token $GH_TOKEN" \
               "https://api.github.com/repos/$REPO/commits/$SHA" | jq -r '.author.login // empty')
           fi
-          # Fallback to PAT owner if not found
-          if [ -z "$USERNAME" ] || [ "$USERNAME" = "null" ]; then
-            USERNAME=$(curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/user | jq -r .login)
-            echo "Fallback to PAT owner: $USERNAME"
+          # Only output if valid
+          if [ -n "$USERNAME" ] && [ "$USERNAME" != "null" ]; then
+            echo "assignee=$USERNAME" >> $GITHUB_OUTPUT
+          else
+            echo "assignee=" >> $GITHUB_OUTPUT
           fi
-          echo "assignee=$USERNAME" >> $GITHUB_OUTPUT
+
+      - name: Debug assignee
+        run: echo "Assignee is ${{ steps.get_assignee.outputs.assignee }}"
 
       - name: Create Pull Request
         uses: repo-sync/pull-request@v2
@@ -162,7 +162,7 @@ jobs:
         run: |
           if [ "$PR_ACTION" = "opened" ]; then
             TRANSITION_NAME="In Review"
-          elif [ "$PR_ACTION" = "closed" ] && [ "$PR_MERGED" = "true" ]; then
+          elif [ "$PR_MERGED" = "true" ]; then
             TRANSITION_NAME="Testing"
           else
             echo "No Jira transition needed for this event."
