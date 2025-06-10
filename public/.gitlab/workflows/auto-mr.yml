@@ -1,0 +1,100 @@
+name: Auto PR Creation and Jira Status Update
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+  pull_request:
+    types: [opened, closed]
+
+jobs:
+  auto-create-pr:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract Jira Ticket ID and Title from Branch Name
+        id: extract_jira
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          if [[ "$BRANCH_NAME" =~ ([A-Z]+-[0-9]+)-(.*) ]]; then
+            JIRA_ID="${BASH_REMATCH[1]}"
+            JIRA_TITLE="${BASH_REMATCH[2]//-/ }"
+          else
+            JIRA_ID="NO-JIRA"
+            JIRA_TITLE="$BRANCH_NAME"
+          fi
+          echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
+          echo "jira_title=$JIRA_TITLE" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Auto PR for pushed changes"
+          title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.extract_jira.outputs.jira_title }}"
+          body: |
+            This pull request was created automatically by a GitHub Action when code was pushed to the branch `${{ github.ref_name }}`.
+          base: main
+          branch: ${{ github.ref_name }}
+          delete-branch: false
+          assignees: ${{ github.actor }}
+
+  update-jira-status:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Jira Ticket ID from Branch Name
+        id: extract_jira
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}"
+          if [[ "$BRANCH_NAME" =~ ([A-Z]+-[0-9]+) ]]; then
+            JIRA_ID="${BASH_REMATCH[1]}"
+          else
+            JIRA_ID=""
+          fi
+          echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
+
+      - name: Update Jira Status
+        if: steps.extract_jira.outputs.jira_id != ''
+        env:
+          JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          PR_ACTION: ${{ github.event.action }}
+        run: |
+          if [ "$PR_ACTION" = "opened" ]; then
+            TRANSITION_NAME="In Review"
+          elif [ "$PR_ACTION" = "closed" ]; then
+            TRANSITION_NAME="Testing"
+          else
+            exit 0
+          fi
+
+          # Get transition ID for the desired status
+          TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
+            -H "Accept: application/json" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions")
+          TRANSITION_ID=$(echo "$TRANSITIONS" | jq -r --arg NAME "$TRANSITION_NAME" '.transitions[] | select(.name==$NAME) | .id')
+
+          if [ -z "$TRANSITION_ID" ]; then
+            echo "Transition '$TRANSITION_NAME' not found for $JIRA_ID"
+            exit 1
+          fi
+
+          # Perform the transition
+          curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X POST \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            --data "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions"
