@@ -66,10 +66,10 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           PR_ACTION: ${{ github.event.action }}
         run: |
-          if [ "$PR_ACTION" = "opened" ]; then
-            TRANSITION_NAME="In Review"
-          elif [ "$PR_ACTION" = "closed" ]; then
+          if [ "$PR_ACTION" = "closed" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
             TRANSITION_NAME="Testing"
+          elif [ "$PR_ACTION" = "opened" ]; then
+            TRANSITION_NAME="In Review"
           else
             exit 0
           fi
