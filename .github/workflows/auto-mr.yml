@@ -65,30 +65,30 @@ jobs:
           echo "$SUMMARY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Get commit author's GitHub username (if possible)
+      - name: Get latest commit author's GitHub login (id) for PR assignee
         id: get_assignee
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the email of the latest commit author
-          AUTHOR_EMAIL=$(git log -1 --pretty=format:"%ae")
-          echo "Latest commit author email: $AUTHOR_EMAIL"
-          USERNAME=""
-          if [ -n "$AUTHOR_EMAIL" ]; then
-            REPO="${GITHUB_REPOSITORY}"
-            SHA=$(git rev-parse HEAD)
-            USERNAME=$(curl -s -H "Authorization: token $GH_TOKEN" \
-              "https://api.github.com/repos/$REPO/commits/$SHA" | jq -r '.author.login // empty')
-          fi
+          # Get the SHA of the latest commit
+          SHA=$(git rev-parse HEAD)
+          REPO="${GITHUB_REPOSITORY}"
+          # Fetch commit details from GitHub API
+          RESPONSE=$(curl -s -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/commits/$SHA")
+          # Extract the GitHub login (id) of the author if available
+          AUTHOR_LOGIN=$(echo "$RESPONSE" | jq -r '.author.login // empty')
+          echo "Latest commit SHA: $SHA"
+          echo "GitHub login of commit author: $AUTHOR_LOGIN"
           # Only output if valid
-          if [ -n "$USERNAME" ] && [ "$USERNAME" != "null" ]; then
-            echo "assignee=$USERNAME" >> $GITHUB_OUTPUT
+          if [ -n "$AUTHOR_LOGIN" ] && [ "$AUTHOR_LOGIN" != "null" ]; then
+            echo "assignee=$AUTHOR_LOGIN" >> $GITHUB_OUTPUT
           else
             echo "assignee=" >> $GITHUB_OUTPUT
           fi
 
       - name: Debug assignee
-        run: echo "Assignee is $USERNAME ${{ steps.get_assignee.outputs.assignee }}"
+        run: echo "Assignee is ${{ steps.get_assignee.outputs.assignee }}"
 
       - name: Create Pull Request
         uses: repo-sync/pull-request@v2
