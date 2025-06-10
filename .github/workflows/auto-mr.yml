@@ -81,7 +81,7 @@ jobs:
 
             ---
             _This pull request was created automatically by a GitHub Action when code was pushed to the branch `${{ github.ref_name }}`._
-          pr_assignee: ${{ github.actor }}
+          pr_assignee: ${{ steps.get_pat_owner.outputs.pat_owner }}
           pr_label: "auto-pr"
 
   update-jira-status-after-pr:
