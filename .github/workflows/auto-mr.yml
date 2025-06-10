@@ -12,6 +12,9 @@ jobs:
   auto-create-pr:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    outputs:
+      jira_id: ${{ steps.extract_jira.outputs.jira_id }}
+      jira_title: ${{ steps.extract_jira.outputs.jira_title }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -42,7 +45,39 @@ jobs:
           pr_assignee: ${{ github.actor }}
           pr_label: "auto-pr"
 
-  update-jira-status:
+  update-jira-status-after-pr:
+    if: github.event_name == 'push'
+    needs: auto-create-pr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Jira Status to In Review after PR creation
+        if: needs.auto-create-pr.outputs.jira_id != '' && needs.auto-create-pr.outputs.jira_id != 'NO-JIRA'
+        env:
+          JIRA_ID: ${{ needs.auto-create-pr.outputs.jira_id }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          TRANSITION_NAME="In Review"
+          # Get transition ID for the desired status
+          TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
+            -H "Accept: application/json" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions")
+          echo "Available transitions: $TRANSITIONS"
+          TRANSITION_ID=$(echo "$TRANSITIONS" | jq -r --arg NAME "$TRANSITION_NAME" '.transitions[] | select(.name==$NAME) | .id')
+
+          if [ -z "$TRANSITION_ID" ]; then
+            echo "Transition '$TRANSITION_NAME' not found for $JIRA_ID"
+            exit 1
+          fi
+
+          # Perform the transition
+          curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X POST \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            --data "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions"
+
+  update-jira-status-on-pr-events:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -57,7 +92,7 @@ jobs:
           fi
           echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
 
-      - name: Update Jira Status
+      - name: Update Jira Status on PR events
         if: steps.extract_jira.outputs.jira_id != ''
         env:
           JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
