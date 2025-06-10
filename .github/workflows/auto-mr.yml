@@ -43,7 +43,7 @@ jobs:
           pr_label: "auto-pr"
 
   update-jira-status:
-    needs: auto-create-pr
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Extract Jira Ticket ID from Branch Name
@@ -65,8 +65,9 @@ jobs:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           PR_ACTION: ${{ github.event.action }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
         run: |
-          if [ "$PR_ACTION" = "merged" ] && [ "${{ github.event.pull_request.merged }}" = "true" ]; then
+          if [ "$PR_ACTION" = "closed" ] && [ "$PR_MERGED" = "true" ]; then
             TRANSITION_NAME="Testing"
           elif [ "$PR_ACTION" = "opened" ]; then
             TRANSITION_NAME="In Review"
