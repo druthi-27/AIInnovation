@@ -31,6 +31,7 @@ import ShieldOutlinedIcon from "@mui/icons-material/ShieldOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import DownloadProgress from "./Components/DownloadProgress";
 import ShieldoutlinedIconDialogue from "./Components/ShieldoutlinedIconDialogue";
+import ChatbotPopup from "./Components/ChatbotPopup";
 
 const drawerWidth = 240;
 
@@ -77,7 +78,7 @@ export default function App() {
               style={{ height: 28,  padding: 2 }}
             />
             <Typography variant="h6" sx={{ color: "#fff", fontWeight: 700 }}>
-              ANALYTICS CLOUD
+              ANALYTICS WORKBENCH
             </Typography>
           </Box>
           <Tabs
@@ -381,6 +382,7 @@ export default function App() {
           </Box>
         </Box>
       </Box>
+      <ChatbotPopup />
     </Box>
   );
 }
