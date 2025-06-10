@@ -16,6 +16,7 @@ jobs:
       jira_id: ${{ steps.extract_jira.outputs.jira_id }}
       jira_title: ${{ steps.fetch_jira_title.outputs.jira_title }}
       commit_summary: ${{ steps.commit_summary.outputs.summary }}
+      pr_assignee: ${{ steps.get_assignee.outputs.assignee }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -55,11 +56,8 @@ jobs:
       - name: Get commit summary for PR body
         id: commit_summary
         run: |
-          # Fetch main branch for comparison
           git fetch origin main
-          # Get commit log between main and this branch
           SUMMARY=$(git log origin/main..HEAD --pretty=format:"- %s (%an)" || echo "No new commits.")
-          # If no summary, provide a default message
           if [ -z "$SUMMARY" ]; then
             SUMMARY="No new commits between this branch and main."
           fi
@@ -67,10 +65,35 @@ jobs:
           echo "$SUMMARY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      - name: Get commit author's GitHub username (if possible)
+        id: get_assignee
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the email of the latest commit author
+          AUTHOR_EMAIL=$(git log -1 --pretty=format:"%ae")
+          echo "Latest commit author email: $AUTHOR_EMAIL"
+          # Try to find a GitHub user with this email
+          USERNAME=""
+          if [ -n "$AUTHOR_EMAIL" ]; then
+            # The search API for users by email is not public, but we can try to match via commits API
+            # Try to get the username from the commit itself (if pushed by a GitHub user)
+            REPO="${GITHUB_REPOSITORY}"
+            SHA=$(git rev-parse HEAD)
+            USERNAME=$(curl -s -H "Authorization: token $GH_TOKEN" \
+              "https://api.github.com/repos/$REPO/commits/$SHA" | jq -r '.author.login // empty')
+          fi
+          # Fallback to PAT owner if not found
+          if [ -z "$USERNAME" ] || [ "$USERNAME" = "null" ]; then
+            USERNAME=$(curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/user | jq -r .login)
+            echo "Fallback to PAT owner: $USERNAME"
+          fi
+          echo "assignee=$USERNAME" >> $GITHUB_OUTPUT
+
       - name: Create Pull Request
         uses: repo-sync/pull-request@v2
         with:
-          github_token: ${{ secrets.PERSONAL_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           source_branch: ${{ github.ref_name }}
           destination_branch: main
           pr_title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.fetch_jira_title.outputs.jira_title }}"
@@ -81,7 +104,7 @@ jobs:
 
             ---
             _This pull request was created automatically by a GitHub Action when code was pushed to the branch `${{ github.ref_name }}`._
-          pr_assignee: ${{ steps.get_pat_owner.outputs.pat_owner }}
+          pr_assignee: ${{ steps.get_assignee.outputs.assignee }}
           pr_label: "auto-pr"
 
   update-jira-status-after-pr:
@@ -98,19 +121,15 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           TRANSITION_NAME="In Review"
-          # Get transition ID for the desired status
           TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
             -H "Accept: application/json" \
             "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions")
           echo "Available transitions: $TRANSITIONS"
           TRANSITION_ID=$(echo "$TRANSITIONS" | jq -r --arg NAME "$TRANSITION_NAME" '.transitions[] | select(.name==$NAME) | .id')
-
           if [ -z "$TRANSITION_ID" ]; then
             echo "Transition '$TRANSITION_NAME' not found for $JIRA_ID"
             exit 1
           fi
-
-          # Perform the transition
           curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X POST \
             -H "Accept: application/json" -H "Content-Type: application/json" \
             --data "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
@@ -149,20 +168,15 @@ jobs:
             echo "No Jira transition needed for this event."
             exit 0
           fi
-
-          # Get transition ID for the desired status
           TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
             -H "Accept: application/json" \
             "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions")
           echo "Available transitions: $TRANSITIONS"
           TRANSITION_ID=$(echo "$TRANSITIONS" | jq -r --arg NAME "$TRANSITION_NAME" '.transitions[] | select(.name==$NAME) | .id')
-
           if [ -z "$TRANSITION_ID" ]; then
             echo "Transition '$TRANSITION_NAME' not found for $JIRA_ID"
             exit 1
           fi
-
-          # Perform the transition
           curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X POST \
             -H "Accept: application/json" -H "Content-Type: application/json" \
             --data "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
