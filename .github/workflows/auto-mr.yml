@@ -15,13 +15,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Git user
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Extract Jira Ticket ID and Title from Branch Name
         id: extract_jira
@@ -38,17 +31,16 @@ jobs:
           echo "jira_title=$JIRA_TITLE" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v6
+        uses: repo-sync/pull-request@v2
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Auto PR for pushed changes"
-          title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.extract_jira.outputs.jira_title }}"
-          body: |
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source_branch: ${{ github.ref_name }}
+          destination_branch: main
+          pr_title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.extract_jira.outputs.jira_title }}"
+          pr_body: |
             This pull request was created automatically by a GitHub Action when code was pushed to the branch `${{ github.ref_name }}`.
-          base: main
-          branch: ${{ github.ref_name }}
-          delete-branch: false
-          assignees: ${{ github.actor }}
+          pr_assignee: ${{ github.actor }}
+          pr_label: "auto-pr"
 
   update-jira-status:
     if: github.event_name == 'pull_request'
