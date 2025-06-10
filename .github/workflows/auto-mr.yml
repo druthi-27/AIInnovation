@@ -57,8 +57,32 @@ jobs:
           fi
           echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
 
+      - name: Check for open PRs with same Jira ID
+        id: check_open_prs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
+          REPO: ${{ github.repository }}
+        run: |
+          if [ -z "$JIRA_ID" ]; then
+            echo "No Jira ID found, skipping check."
+            echo "open_pr_exists=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          # Search for open PRs with the Jira ID in the title
+          prs=$(gh pr list --repo "$REPO" --state open --search "$JIRA_ID" --json number,title,headRefName)
+          count=$(echo "$prs" | jq ". | length")
+          if [ "$count" -gt 0 ]; then
+            echo "Found $count open PR(s) with Jira ID $JIRA_ID"
+            echo "open_pr_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "No open PRs with Jira ID $JIRA_ID"
+            echo "open_pr_exists=false" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
       - name: Update Jira Status
-        if: steps.extract_jira.outputs.jira_id != ''
+        if: steps.check_open_prs.outputs.open_pr_exists == 'false' && steps.extract_jira.outputs.jira_id != ''
         env:
           JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
