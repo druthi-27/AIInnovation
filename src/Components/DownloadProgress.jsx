@@ -67,14 +67,15 @@ const DownloadProgress = ({ installType }) => {
     installType === "Non-Admin"
       ? nonAdminDownloadLink
       : installType === "Admin"
-      ? adminDownloadLink
-      : null;
+        ? adminDownloadLink
+        : null;
 
   return (
     <Box>
       {/* Center the button horizontally */}
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
         <Button
+          data-testid="download-button"
           variant="contained"
           startIcon={<Download />}
           sx={{
@@ -102,7 +103,7 @@ const DownloadProgress = ({ installType }) => {
         </Button>
       </Box>
       {downloading && (
-        <Box sx={{ mt: 3 }}>
+        <Box sx={{ mt: 3 }} data-testid="download-progress">
           <LinearProgress variant="determinate" value={progress} />
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
             <Typography variant="body2">{progress}%</Typography>
