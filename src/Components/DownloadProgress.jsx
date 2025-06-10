@@ -132,3 +132,5 @@ const DownloadProgress = ({ installType }) => {
 };
 
 export default DownloadProgress;
+
+// this is download page 
