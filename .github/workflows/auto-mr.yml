@@ -43,6 +43,7 @@ jobs:
           pr_label: "auto-pr"
 
   update-jira-status:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Extract Jira Ticket ID from Branch Name
