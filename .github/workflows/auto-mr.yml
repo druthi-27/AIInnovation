@@ -14,24 +14,58 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       jira_id: ${{ steps.extract_jira.outputs.jira_id }}
-      jira_title: ${{ steps.extract_jira.outputs.jira_title }}
+      jira_title: ${{ steps.fetch_jira_title.outputs.jira_title }}
+      commit_summary: ${{ steps.commit_summary.outputs.summary }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Jira Ticket ID and Title from Branch Name
+      - name: Extract Jira Ticket ID from Branch Name
         id: extract_jira
         run: |
           BRANCH_NAME="${GITHUB_REF##*/}"
-          if [[ "$BRANCH_NAME" =~ ([A-Z]+-[0-9]+)-(.*) ]]; then
+          if [[ "$BRANCH_NAME" =~ ([A-Z]+-[0-9]+) ]]; then
             JIRA_ID="${BASH_REMATCH[1]}"
-            JIRA_TITLE="${BASH_REMATCH[2]//-/ }"
           else
             JIRA_ID="NO-JIRA"
-            JIRA_TITLE="$BRANCH_NAME"
           fi
           echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
-          echo "jira_title=$JIRA_TITLE" >> $GITHUB_OUTPUT
+
+      - name: Fetch Jira Ticket Title from Jira API
+        id: fetch_jira_title
+        env:
+          JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          if [ "$JIRA_ID" = "NO-JIRA" ]; then
+            echo "jira_title=No Jira Title" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          RESPONSE=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
+            -H "Accept: application/json" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID")
+          TITLE=$(echo "$RESPONSE" | jq -r '.fields.summary')
+          if [ -z "$TITLE" ] || [ "$TITLE" = "null" ]; then
+            TITLE="No Jira Title"
+          fi
+          echo "jira_title=$TITLE" >> $GITHUB_OUTPUT
+
+      - name: Get commit summary for PR body
+        id: commit_summary
+        run: |
+          # Fetch main branch for comparison
+          git fetch origin main
+          # Get commit log between main and this branch
+          SUMMARY=$(git log origin/main..HEAD --pretty=format:"- %s (%an)" || echo "No new commits.")
+          # If no summary, provide a default message
+          if [ -z "$SUMMARY" ]; then
+            SUMMARY="No new commits between this branch and main."
+          fi
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         uses: repo-sync/pull-request@v2
@@ -39,9 +73,14 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           source_branch: ${{ github.ref_name }}
           destination_branch: main
-          pr_title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.extract_jira.outputs.jira_title }}"
+          pr_title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.fetch_jira_title.outputs.jira_title }}"
           pr_body: |
-            This pull request was created automatically by a GitHub Action when code was pushed to the branch `${{ github.ref_name }}`.
+            ## Code Changes
+
+            ${{ steps.commit_summary.outputs.summary }}
+
+            ---
+            _This pull request was created automatically by a GitHub Action when code was pushed to the branch `${{ github.ref_name }}`._
           pr_assignee: ${{ github.actor }}
           pr_label: "auto-pr"
 
