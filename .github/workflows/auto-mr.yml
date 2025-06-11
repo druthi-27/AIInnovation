@@ -1,0 +1,183 @@
+name: Auto PR Creation and Jira Status Update
+
+on:
+  push:
+    branches:
+      - '**'
+      - '!main'
+  pull_request:
+    types: [opened, closed]
+
+jobs:
+  auto-create-pr:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    outputs:
+      jira_id: ${{ steps.extract_jira.outputs.jira_id }}
+      jira_title: ${{ steps.fetch_jira_title.outputs.jira_title }}
+      commit_summary: ${{ steps.commit_summary.outputs.summary }}
+      pr_assignee: ${{ steps.get_assignee.outputs.assignee }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Jira Ticket ID from Branch Name
+        id: extract_jira
+        run: |
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          if [[ "$BRANCH_NAME" =~ ([A-Z]+-[0-9]+) ]]; then
+            JIRA_ID="${BASH_REMATCH[1]}"
+          else
+            JIRA_ID="NO-JIRA"
+          fi
+          echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
+
+      - name: Fetch Jira Ticket Title from Jira API
+        id: fetch_jira_title
+        env:
+          JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          if [ "$JIRA_ID" = "NO-JIRA" ]; then
+            echo "jira_title=No Jira Title" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          RESPONSE=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
+            -H "Accept: application/json" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID")
+          TITLE=$(echo "$RESPONSE" | jq -r '.fields.summary')
+          if [ -z "$TITLE" ] || [ "$TITLE" = "null" ]; then
+            TITLE="No Jira Title"
+          fi
+          echo "jira_title=$TITLE" >> $GITHUB_OUTPUT
+
+      - name: Get commit summary for PR body
+        id: commit_summary
+        run: |
+          git fetch origin main
+          SUMMARY=$(git log origin/main..HEAD --pretty=format:"- %s (%an)" || echo "No new commits.")
+          if [ -z "$SUMMARY" ]; then
+            SUMMARY="No new commits between this branch and main."
+          fi
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          echo "$SUMMARY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Get latest commit author's GitHub login (id) for PR assignee
+        id: get_assignee
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get the SHA of the latest commit
+          SHA=$(git rev-parse HEAD)
+          REPO="${GITHUB_REPOSITORY}"
+          # Fetch commit details from GitHub API
+          RESPONSE=$(curl -s -H "Authorization: token $GH_TOKEN" \
+            "https://api.github.com/repos/$REPO/commits/$SHA")
+          # Extract the GitHub login (id) of the author if available
+          AUTHOR_LOGIN=$(echo "$RESPONSE" | jq -r '.author.login // empty')
+          echo "Latest commit SHA: $SHA"
+          echo "GitHub login of commit author: $AUTHOR_LOGIN"
+          # Only output if valid
+          if [ -n "$AUTHOR_LOGIN" ] && [ "$AUTHOR_LOGIN" != "null" ]; then
+            echo "assignee=$AUTHOR_LOGIN" >> $GITHUB_OUTPUT
+          else
+            echo "assignee=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Debug assignee
+        run: echo "Assignee is ${{ steps.get_assignee.outputs.assignee }}"
+
+      - name: Create Pull Request
+        uses: repo-sync/pull-request@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          source_branch: ${{ github.ref_name }}
+          destination_branch: "Raise-MR-when-code-is-pushed"
+          pr_title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.fetch_jira_title.outputs.jira_title }}"
+          pr_body: |
+            ## Code Changes
+
+            ${{ steps.commit_summary.outputs.summary }}
+
+            ---
+            _This pull request was created automatically by a GitHub Action when code was pushed to the branch `${{ github.ref_name }}`._
+          pr_assignee: ${{ steps.get_assignee.outputs.assignee }}
+          pr_label: "auto-pr"
+
+  update-jira-status-after-pr:
+    if: github.event_name == 'push'
+    needs: auto-create-pr
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Jira Status to In Review after PR creation
+        if: needs.auto-create-pr.outputs.jira_id != '' && needs.auto-create-pr.outputs.jira_id != 'NO-JIRA'
+        env:
+          JIRA_ID: ${{ needs.auto-create-pr.outputs.jira_id }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          TRANSITION_NAME="In Review"
+          TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
+            -H "Accept: application/json" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions")
+          echo "Available transitions: $TRANSITIONS"
+          TRANSITION_ID=$(echo "$TRANSITIONS" | jq -r --arg NAME "$TRANSITION_NAME" '.transitions[] | select(.name==$NAME) | .id')
+          if [ -z "$TRANSITION_ID" ]; then
+            echo "Transition '$TRANSITION_NAME' not found for $JIRA_ID"
+            exit 1
+          fi
+          curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X POST \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            --data "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions"
+
+  update-jira-status-on-pr-events:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Jira Ticket ID from Branch Name
+        id: extract_jira
+        run: |
+          BRANCH_NAME="${GITHUB_HEAD_REF:-${GITHUB_REF##*/}}"
+          if [[ "$BRANCH_NAME" =~ ([A-Z]+-[0-9]+) ]]; then
+            JIRA_ID="${BASH_REMATCH[1]}"
+          else
+            JIRA_ID=""
+          fi
+          echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
+
+      - name: Update Jira Status on PR events
+        if: steps.extract_jira.outputs.jira_id != ''
+        env:
+          JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          PR_ACTION: ${{ github.event.action }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+        run: |
+          if [ "$PR_ACTION" = "opened" ]; then
+            TRANSITION_NAME="In Review"
+          elif [ "$PR_MERGED" = "true" ]; then
+            TRANSITION_NAME="Testing"
+          else
+            echo "No Jira transition needed for this event."
+            exit 0
+          fi
+          TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X GET \
+            -H "Accept: application/json" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions")
+          echo "Available transitions: $TRANSITIONS"
+          TRANSITION_ID=$(echo "$TRANSITIONS" | jq -r --arg NAME "$TRANSITION_NAME" '.transitions[] | select(.name==$NAME) | .id')
+          if [ -z "$TRANSITION_ID" ]; then
+            echo "Transition '$TRANSITION_NAME' not found for $JIRA_ID"
+            exit 1
+          fi
+          curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" -X POST \
+            -H "Accept: application/json" -H "Content-Type: application/json" \
+            --data "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_ID/transitions"
