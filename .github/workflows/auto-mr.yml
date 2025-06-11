@@ -95,7 +95,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           source_branch: ${{ github.ref_name }}
-          destination_branch: main
+          destination_branch: "Raise-MR-when-code-is-pushed"
           pr_title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.fetch_jira_title.outputs.jira_title }}"
           pr_body: |
             ## Code Changes
