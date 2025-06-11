@@ -65,22 +65,32 @@ jobs:
           echo "$SUMMARY" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Get latest commit author's GitHub login (id) for PR assignee
+      - name: Get last commit author's GitHub login (ID) for PR assignee
         id: get_assignee
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Get the SHA of the latest commit
+          # Get the SHA and email of the latest commit
           SHA=$(git rev-parse HEAD)
+          AUTHOR_EMAIL=$(git log -1 --pretty=format:"%ae")
           REPO="${GITHUB_REPOSITORY}"
-          # Fetch commit details from GitHub API
+
+          # Try to get the GitHub login from the commit API
           RESPONSE=$(curl -s -H "Authorization: token $GH_TOKEN" \
             "https://api.github.com/repos/$REPO/commits/$SHA")
-          # Extract the GitHub login (id) of the author if available
           AUTHOR_LOGIN=$(echo "$RESPONSE" | jq -r '.author.login // empty')
+
           echo "Latest commit SHA: $SHA"
+          echo "Latest commit author email: $AUTHOR_EMAIL"
           echo "GitHub login of commit author: $AUTHOR_LOGIN"
-          # Only output if valid
+
+          # If not found, fallback to PAT owner
+          if [ -z "$AUTHOR_LOGIN" ] || [ "$AUTHOR_LOGIN" = "null" ]; then
+            echo "Could not resolve GitHub login from commit. Falling back to PAT owner."
+            AUTHOR_LOGIN=$(curl -s -H "Authorization: token $GH_TOKEN" https://api.github.com/user | jq -r .login)
+          fi
+
+          # Only output if valid (non-empty and not null)
           if [ -n "$AUTHOR_LOGIN" ] && [ "$AUTHOR_LOGIN" != "null" ]; then
             echo "assignee=$AUTHOR_LOGIN" >> $GITHUB_OUTPUT
           else
@@ -105,7 +115,7 @@ jobs:
             ---
             _This pull request was created automatically by a GitHub Action when code was pushed to the branch `${{ github.ref_name }}`._
           pr_assignee: ${{ steps.get_assignee.outputs.assignee }}
-          pr_label: "auto-pr"
+          pr_label: "Review effort 4/5"
 
   update-jira-status-after-pr:
     if: github.event_name == 'push'
