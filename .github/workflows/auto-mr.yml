@@ -56,16 +56,16 @@ jobs:
         id: commit_summary
         run: |
           git fetch origin main
-          # Get the first lines of all commit messages between main and HEAD
-          SUMMARY=$(git log origin/main..HEAD --pretty=format:"%s" | head -5)
+          # Get all commit messages between main and HEAD, newest first
+          SUMMARY=$(git log origin/main..HEAD --pretty=format:"%s")
           if [ -z "$SUMMARY" ]; then
-            SUMMARY="No new commits between this branch and main."
+            DESCRIPTION="No new commits between this branch and main."
+          else
+            DESCRIPTION="This PR introduces the following changes:\n"
+            while IFS= read -r line; do
+              DESCRIPTION="${DESCRIPTION}- ${line}\n"
+            done <<< "$SUMMARY"
           fi
-          # Format as a brief description
-          DESCRIPTION="This PR introduces the following changes:\n"
-          while IFS= read -r line; do
-            DESCRIPTION="$DESCRIPTION- $line\n"
-          done <<< "$SUMMARY"
           echo -e "summary<<EOF\n$DESCRIPTION\nEOF" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
