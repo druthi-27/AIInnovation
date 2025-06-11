@@ -20,7 +20,24 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check if PR already exists for this branch
+        id: check_existing_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_COUNT=$(gh pr list --head "${GITHUB_REF##*/}" --json number --jq 'length')
+          if [ "$PR_COUNT" -gt 0 ]; then
+            echo "A PR already exists for this branch. Exiting."
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+            exit 0
+          else
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+          fi
+        # Ensure GitHub CLI is available
+        shell: bash
+
       - name: Extract Jira Ticket ID from Branch Name
+        if: steps.check_existing_pr.outputs.pr_exists != 'true'
         id: extract_jira
         run: |
           BRANCH_NAME="${GITHUB_REF##*/}"
@@ -32,6 +49,7 @@ jobs:
           echo "jira_id=$JIRA_ID" >> $GITHUB_OUTPUT
 
       - name: Fetch Jira Ticket Title from Jira API
+        if: steps.check_existing_pr.outputs.pr_exists != 'true'
         id: fetch_jira_title
         env:
           JIRA_ID: ${{ steps.extract_jira.outputs.jira_id }}
@@ -53,10 +71,10 @@ jobs:
           echo "jira_title=$TITLE" >> $GITHUB_OUTPUT
 
       - name: Generate brief description of code changes for PR body
+        if: steps.check_existing_pr.outputs.pr_exists != 'true'
         id: commit_summary
         run: |
           git fetch origin main
-          # Get all commit messages between main and HEAD, newest first
           SUMMARY=$(git log origin/main..HEAD --pretty=format:"%s")
           if [ -z "$SUMMARY" ]; then
             DESCRIPTION="No new commits between this branch and main."
@@ -69,6 +87,7 @@ jobs:
           echo -e "summary<<EOF\n$DESCRIPTION\nEOF" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
+        if: steps.check_existing_pr.outputs.pr_exists != 'true'
         uses: repo-sync/pull-request@v2
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
