@@ -33,6 +33,8 @@ import DownloadProgress from "./Components/DownloadProgress";
 import ShieldoutlinedIconDialogue from "./Components/ShieldoutlinedIconDialogue";
 import ChatbotPopup from "./Components/ChatbotPopup";
 
+import { alteryxAdminFileData, alteryxNonAdminFileData,alteryxPredictiveToolsAdminData,alteryxPredictiveToolsNonAdminData,alteryxIntelligenceSuiteAdminData,
+  alteryxIntelligenceSuiteNonAdminData,genAIToolsNonAdminData,genAIToolsAdminData,copilot} from "./Constants/Const";
 const drawerWidth = 240;
 
 const sidebarItems = [
@@ -56,6 +58,20 @@ const sidebarItems = [
 export default function App() {
   const [installType, setInstallType] = useState("Non-Admin");
 
+  const designerFileData =
+    installType === "Admin" ? alteryxAdminFileData : alteryxNonAdminFileData;
+  const predictiveToolsFileData =
+    installType === "Admin"
+      ? alteryxPredictiveToolsAdminData
+      : alteryxPredictiveToolsNonAdminData;
+  const intelligenceSuiteFileData =
+    installType === "Admin"
+    ? alteryxIntelligenceSuiteAdminData
+    : alteryxIntelligenceSuiteNonAdminData;
+  const genAIToolsFileData =
+    installType === "Admin"
+    ? genAIToolsAdminData
+    : genAIToolsNonAdminData;
   return (
     <Box sx={{ bgcolor: "#f7fafd", minHeight: "100vh" }}>
       {/* Top Navigation Bar */}
@@ -235,12 +251,7 @@ export default function App() {
                   843 MB
                 </Typography>
                 <DownloadProgress installType={installType} />
-                <ShieldoutlinedIconDialogue
-                fileName="Alteryx Designer 2025.1.exe"
-                hash="a1b2c3d4e5f6... (SHA256)"
-                publisher="Alteryx, Inc."
-                lastScan="April 22, 2025"
-                />
+                <ShieldoutlinedIconDialogue fileData={designerFileData} />
               </Box>
             </AccordionDetails>
           </Accordion>
@@ -267,12 +278,7 @@ export default function App() {
                   250 MB
                 </Typography>
                 <DownloadProgress  installType={installType}/>
-                <ShieldoutlinedIconDialogue
-                fileName="Alteryx Designer 2025.1.exe"
-                hash="a1b2c3d4e5f6... (SHA256)"
-                publisher="Alteryx, Inc."
-                lastScan="April 22, 2025"
-                />
+                <ShieldoutlinedIconDialogue fileData={predictiveToolsFileData} />
               </Box>
             </AccordionDetails>
           </Accordion>
@@ -299,12 +305,7 @@ export default function App() {
                   500 MB
                 </Typography>
                 <DownloadProgress installType={installType}/>
-                <ShieldoutlinedIconDialogue
-                fileName="Alteryx Designer 2025.1.exe"
-                hash="a1b2c3d4e5f6... (SHA256)"
-                publisher="Alteryx, Inc."
-                lastScan="April 22, 2025"
-                />
+                <ShieldoutlinedIconDialogue fileData={intelligenceSuiteFileData} />
               </Box>
             </AccordionDetails>
           </Accordion>
@@ -331,12 +332,7 @@ export default function App() {
                   120 MB
                 </Typography>
                 <DownloadProgress installType={installType} />
-                <ShieldoutlinedIconDialogue
-                fileName="Alteryx Designer 2025.1.exe"
-                hash="a1b2c3d4e5f6... (SHA256)"
-                publisher="Alteryx, Inc."
-                lastScan="April 22, 2025"
-                />
+                <ShieldoutlinedIconDialogue fileData={genAIToolsFileData} />
               </Box>
             </AccordionDetails>
           </Accordion>
@@ -363,12 +359,7 @@ export default function App() {
                   80 MB
                 </Typography>
                 <DownloadProgress  installType={installType}/>
-                <ShieldoutlinedIconDialogue
-                fileName="Alteryx Designer 2025.1.exe"
-                hash="a1b2c3d4e5f6... (SHA256)"
-                publisher="Alteryx, Inc."
-                lastScan="April 22, 2025"
-                />
+                <ShieldoutlinedIconDialogue fileData={copilot} />
               </Box>
             </AccordionDetails>
           </Accordion>
