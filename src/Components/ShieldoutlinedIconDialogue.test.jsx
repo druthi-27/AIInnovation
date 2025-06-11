@@ -1,92 +1,91 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import ShieldoutlinedIconDialogue from "../Components/ShieldoutlinedIconDialogue";
+import ShieldoutlinedIconDialogue from "./ShieldoutlinedIconDialogue";
+
+// Mock MUI icons to avoid unnecessary rendering complexity
+jest.mock("@mui/icons-material/ShieldOutlined", () => () => <span data-testid="shield-icon" />);
+jest.mock("@mui/icons-material/CheckCircleOutline", () => () => <span data-testid="check-icon" />);
+
+const mockFileData = {
+  fileName: "example.exe",
+  md5CheckSum: "abc123def456",
+  sha256CheckSum: "789ghi012jkl345mno678pqr901stu234vwx567yz890",
+  publisher: "Acme Corp",
+  releaseDate: "2024-06-01T12:34:56Z"
+};
 
 describe("ShieldoutlinedIconDialogue", () => {
-  const defaultProps = {
-    fileName: "testfile.exe",
-    hash: "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
-    publisher: "Test Publisher",
-    lastScan: "2024-06-01 12:34:56"
-  };
-
-  it("shouldOpenDialogOnIconButtonClick", () => {
-    render(<ShieldoutlinedIconDialogue {...defaultProps} />);
-    // Dialog should not be visible initially
-    expect(screen.queryByText(/Security Details/i)).not.toBeInTheDocument();
-
-    // Click the icon button (ShieldOutlinedIcon is inside IconButton)
-    const iconButton = screen.getByRole("button", { name: /view security details/i });
-    fireEvent.click(iconButton);
-
-    // Dialog should now be visible
-    expect(screen.getByText(/Security Details/i)).toBeInTheDocument();
+  it("renders nothing if fileData is not provided", () => {
+    const { container } = render(<ShieldoutlinedIconDialogue />);
+    expect(container).toBeEmptyDOMElement();
   });
 
-  it("shouldDisplayFileDetailsInDialog", () => {
-    render(<ShieldoutlinedIconDialogue {...defaultProps} />);
-    const iconButton = screen.getByRole("button", { name: /view security details/i });
-    fireEvent.click(iconButton);
+  it("renders the shield icon button with tooltip", () => {
+    render(<ShieldoutlinedIconDialogue fileData={mockFileData} />);
+    // The icon button should be present
+    expect(screen.getByRole("button")).toBeInTheDocument();
+    // Tooltip text is present in the DOM only on hover, but the button is present
+    expect(screen.getByTestId("shield-icon")).toBeInTheDocument();
+  });
 
-    // Check all file details are displayed
-    expect(screen.getByText(/File:/i)).toBeInTheDocument();
-    expect(screen.getByText(defaultProps.fileName)).toBeInTheDocument();
-    expect(screen.getByText(/SHA256:/i)).toBeInTheDocument();
-    expect(screen.getByText(defaultProps.hash)).toBeInTheDocument();
-    expect(screen.getByText(/Publisher:/i)).toBeInTheDocument();
-    expect(screen.getByText(defaultProps.publisher)).toBeInTheDocument();
-    expect(screen.getByText(/Last Security Scan:/i)).toBeInTheDocument();
-    expect(screen.getByText(defaultProps.lastScan)).toBeInTheDocument();
+  it("opens the dialog with correct details when icon button is clicked", () => {
+    render(<ShieldoutlinedIconDialogue fileData={mockFileData} />);
+    // Dialog should not be visible initially
+    expect(screen.queryByText(/security details/i)).not.toBeInTheDocument();
+
+    // Open dialog
+    fireEvent.click(screen.getByRole("button"));
+
+    // Dialog title
+    expect(screen.getByText(/security details/i)).toBeInTheDocument();
+
+    // File details
+    expect(screen.getByText(/file:/i)).toBeInTheDocument();
+    expect(screen.getByText(mockFileData.fileName)).toBeInTheDocument();
+    expect(screen.getByText(/md5:/i)).toBeInTheDocument();
+    expect(screen.getByText(mockFileData.md5CheckSum)).toBeInTheDocument();
+    expect(screen.getByText(/sha256:/i)).toBeInTheDocument();
+    expect(screen.getByText(mockFileData.sha256CheckSum)).toBeInTheDocument();
+    expect(screen.getByText(/publisher:/i)).toBeInTheDocument();
+    expect(screen.getByText(mockFileData.publisher)).toBeInTheDocument();
+    expect(screen.getByText(/release date:/i)).toBeInTheDocument();
+    // Check formatted date
+    expect(screen.getByText(new Date(mockFileData.releaseDate).toLocaleString())).toBeInTheDocument();
+
+    // Security check message and icon
+    expect(screen.getByTestId("check-icon")).toBeInTheDocument();
     expect(
-      screen.getByText(/This file is digitally signed and has passed all security checks./i)
+      screen.getByText(/digitally signed and has passed all security checks/i)
     ).toBeInTheDocument();
   });
 
-  it("shouldCloseDialogOnCloseButtonClick", async () => {
-    render(<ShieldoutlinedIconDialogue {...defaultProps} />);
-    const iconButton = screen.getByRole("button", { name: /view security details/i });
-    fireEvent.click(iconButton);
-
-    // Dialog should be open
-    expect(screen.getByText(/Security Details/i)).toBeInTheDocument();
-
-    // Click the Close button
-    const closeButton = screen.getByRole("button", { name: /close/i });
-    fireEvent.click(closeButton);
-
-    // Dialog should close
-    await waitFor(() =>
-      expect(screen.queryByText(/Security Details/i)).not.toBeInTheDocument()
-    );
+  it("closes the dialog when Close button is clicked", async () => {
+    render(<ShieldoutlinedIconDialogue fileData={mockFileData} />);
+    fireEvent.click(screen.getByRole("button"));
+    expect(screen.getByText(/security details/i)).toBeInTheDocument();
+  
+    // Click Close button
+    fireEvent.click(screen.getByRole("button", { name: /close/i }));
+  
+    // Wait for the dialog to be removed
+    await waitFor(() => {
+      expect(screen.queryByText(/security details/i)).not.toBeInTheDocument();
+    });
   });
+  
+  it("dialog can be closed by pressing Escape key (onClose)", async () => {
+    render(<ShieldoutlinedIconDialogue fileData={mockFileData} />);
+    fireEvent.click(screen.getByRole("button"));
+    // Ensure dialog is open
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
 
+    // Fire Escape key event on the dialog element
+    fireEvent.keyDown(dialog, { key: "Escape", code: "Escape" });
 
-  it("shouldNotOpenDialogWithoutUserInteraction", () => {
-    render(<ShieldoutlinedIconDialogue {...defaultProps} />);
-    // Dialog should not be visible before any interaction
-    expect(screen.queryByText(/Security Details/i)).not.toBeInTheDocument();
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-  });
-
-  it("shouldCloseDialogOnBackdropClick", async () => {
-    render(<ShieldoutlinedIconDialogue
-      fileName="testfile.exe"
-      hash="abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
-      publisher="Test Publisher"
-      lastScan="2024-06-01 12:34:56"
-    />);
-    // Open the dialog
-    const iconButton = screen.getByRole("button", { name: /view security details/i });
-    fireEvent.click(iconButton);
-
-    // Dialog should be open
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-
-    // Find the backdrop and click it
-    // MUI uses [role="presentation"] for the backdrop
-    const backdrop = document.querySelector('[role="presentation"]');
-    expect(backdrop).toBeTruthy();
-    fireEvent.mouseDown(backdrop); // MUI listens for mouseDown
-    fireEvent.click(backdrop);
+    // Wait for the dialog to be removed
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
   });
 });
