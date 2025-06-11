@@ -16,7 +16,6 @@ jobs:
       jira_id: ${{ steps.extract_jira.outputs.jira_id }}
       jira_title: ${{ steps.fetch_jira_title.outputs.jira_title }}
       commit_summary: ${{ steps.commit_summary.outputs.summary }}
-      pr_assignee: ${{ steps.get_assignee.outputs.assignee }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -53,17 +52,21 @@ jobs:
           fi
           echo "jira_title=$TITLE" >> $GITHUB_OUTPUT
 
-      - name: Get commit summary for PR body
+      - name: Generate brief description of code changes for PR body
         id: commit_summary
         run: |
           git fetch origin main
-          SUMMARY=$(git log origin/main..HEAD --pretty=format:"- %s (%an)" || echo "No new commits.")
+          # Get the first lines of all commit messages between main and HEAD
+          SUMMARY=$(git log origin/main..HEAD --pretty=format:"%s" | head -5)
           if [ -z "$SUMMARY" ]; then
             SUMMARY="No new commits between this branch and main."
           fi
-          echo "summary<<EOF" >> $GITHUB_OUTPUT
-          echo "$SUMMARY" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # Format as a brief description
+          DESCRIPTION="This PR introduces the following changes:\n"
+          while IFS= read -r line; do
+            DESCRIPTION="$DESCRIPTION- $line\n"
+          done <<< "$SUMMARY"
+          echo -e "summary<<EOF\n$DESCRIPTION\nEOF" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
         uses: repo-sync/pull-request@v2
@@ -73,7 +76,7 @@ jobs:
           destination_branch: "Raise-MR-when-code-is-pushed"
           pr_title: "${{ steps.extract_jira.outputs.jira_id }}: ${{ steps.fetch_jira_title.outputs.jira_title }}"
           pr_body: |
-            ## Code Changes
+            ## Brief Description
 
             ${{ steps.commit_summary.outputs.summary }}
 
