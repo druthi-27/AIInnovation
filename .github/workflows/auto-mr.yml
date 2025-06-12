@@ -160,7 +160,7 @@ jobs:
           if [ "$PR_ACTION" = "opened" ]; then
             TRANSITION_NAME="In Review"
           elif [ "$PR_MERGED" = "true" ]; then
-            TRANSITION_NAME="Testing"
+            TRANSITION_NAME="Done"
           else
             echo "No Jira transition needed for this event."
             exit 0
