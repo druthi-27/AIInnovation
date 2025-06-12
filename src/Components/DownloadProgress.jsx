@@ -133,4 +133,5 @@ const DownloadProgress = ({ installType }) => {
 
 export default DownloadProgress;
 
-// this is download page 
+// this is downloadProgress file , where we handle the download progress bar and download button
+// it includes the download link based on the install type (Admin or Non-Admin)
